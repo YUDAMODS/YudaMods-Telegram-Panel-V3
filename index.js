@@ -8,6 +8,7 @@ const axios = require('axios');
 const figlet = require('figlet');
 const chalk = require('chalk');
 const express = require('express');
+const qrcode = require('qrcode-terminal');
 
 // Create an instance of Express
 const app = express(); // Jangan Di Ubah
@@ -64,21 +65,25 @@ listenOnPort(port);
 
 const bot = new TelegramBot(token, { polling: true });
 
+let isQRCodeScanned = false;
+
+// Fungsi untuk menampilkan pilihan "Use QR" dan "Use Token" di console
 function showMenu() {
   console.log('Selamat datang! Pilih salah satu opsi:');
   console.log('1. Use QR');
   console.log('2. Use Token');
 }
 
+// Menampilkan menu saat run awal
 showMenu();
 
-
+// Menangani input dari console
 process.stdin.on('data', (data) => {
   const choice = data.toString().trim();
 
-  if (choice === '1') {
+if (choice === '1') {
     console.log('Silakan scan QR code untuk menggunakan bot.');
-    // Tambahkan logika untuk handling QR disini
+    generateQRCode(); // Tambahkan logika untuk menampilkan QR code
   } else if (choice === '2') {
     console.log('Silakan masukkan token untuk menggunakan bot.');
     // Panggil fungsi untuk menghubungkan bot dengan token
@@ -529,3 +534,21 @@ bot.onText(/^\/runtime$/, (msg) => {
 
 
 }
+
+
+function generateQRCode() {
+  const qrCodeText = 'scanme'; // Gantilah dengan teks atau data QR code yang ingin Anda gunakan
+  qrcode.generate(qrCodeText, { small: true });
+}
+
+bot.on('message', (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  // Jika pesan yang diterima adalah QR code, hubungkan bot
+  if (!isQRCodeScanned && text && text.toLowerCase() === 'scanme') {
+    isQRCodeScanned = true;
+    bot.sendMessage(chatId, 'Bot terhubung setelah berhasil melakukan scan QR code.');
+    // Tambahkan logika tambahan yang diperlukan setelah berhasil terhubung
+  }
+});
