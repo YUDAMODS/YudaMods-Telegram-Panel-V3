@@ -9,6 +9,7 @@ const figlet = require('figlet');
 const chalk = require('chalk');
 const express = require('express');
 const qrcode = require('qrcode-terminal');
+const readline = require('readline');
 
 // Create an instance of Express
 const app = express(); // Jangan Di Ubah
@@ -63,7 +64,19 @@ function listenOnPort(port) {
 
 listenOnPort(port);
 
-const bot = new TelegramBot(token, { polling: true });
+const sessionFilePath = 'session.json';
+
+let botToken = sessionData.token || '';
+
+
+// Baca data sesi dari file jika ada
+let sessionData = {};
+if (fs.existsSync(sessionFilePath)) {
+  const sessionFileContent = fs.readFileSync(sessionFilePath, 'utf8');
+  sessionData = JSON.parse(sessionFileContent);
+}
+
+const bot = new TelegramBot(token || botToken, { polling: true });
 
 let isQRCodeScanned = false;
 
@@ -539,6 +552,25 @@ bot.onText(/^\/runtime$/, (msg) => {
 function generateQRCode() {
   const qrCodeText = 'scanme'; // Gantilah dengan teks atau data QR code yang ingin Anda gunakan
   qrcode.generate(qrCodeText, { small: true });
+}
+
+function getTokenInput() {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+  
+  
+rl.question('Masukkan token: ', (inputToken) => {
+    rl.close();
+    botToken = inputToken;
+    sessionData.token = inputToken;
+
+    // Simpan data sesi ke file session.json
+    fs.writeFileSync(sessionFilePath, JSON.stringify(sessionData, null, 2));
+
+    connectWithToken(); // Setelah mendapatkan token, hubungkan bot menggunakan token tersebut
+  });
 }
 
 bot.on('message', (msg) => {
