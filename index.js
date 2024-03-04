@@ -16,7 +16,7 @@ const app = express(); // Jangan Di Ubah
 const port = process.env.PORT || 8080; // Jangan Diubah
 
 // Telegram Bot Token
-const token = ''; // buat bot t.me/BotFather
+let token = ''; // buat bot t.me/BotFather
 
 // Pterodactyl API configurations
 const pterodactylApiUrl = ''; // Masukan Domain Panel
@@ -64,17 +64,18 @@ function listenOnPort(port) {
 
 listenOnPort(port);
 
+let sessionData = {};
+if (fs.existsSync(sessionFilePath)) {
+  const sessionFileContent = fs.readFileSync(sessionFilePath, 'utf8');
+  sessionData = JSON.parse(sessionFileContent);
+}
+
 const sessionFilePath = 'session.json';
 
 let botToken = sessionData.token || '';
 
 
 // Baca data sesi dari file jika ada
-let sessionData = {};
-if (fs.existsSync(sessionFilePath)) {
-  const sessionFileContent = fs.readFileSync(sessionFilePath, 'utf8');
-  sessionData = JSON.parse(sessionFileContent);
-}
 
 const bot = new TelegramBot(token || botToken, { polling: true });
 
@@ -564,10 +565,16 @@ function getTokenInput() {
 rl.question('Masukkan token: ', (inputToken) => {
     rl.close();
     botToken = inputToken;
+    token = inputToken;
     sessionData.token = inputToken;
 
     // Simpan data sesi ke file session.json
     fs.writeFileSync(sessionFilePath, JSON.stringify(sessionData, null, 2));
+    
+    bot.options.polling = false;
+    bot.token = inputToken;
+    token = inputToken;
+    bot.options.polling = true;
 
     connectWithToken(); // Setelah mendapatkan token, hubungkan bot menggunakan token tersebut
   });
